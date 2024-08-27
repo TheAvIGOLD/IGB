@@ -8,7 +8,7 @@
   "name": "InstantGamesBridge",
   "previewIconUrl": "https://asset-resources.gdevelop.io/public-resources/Icons/Glyphster Pack/Master/SVG/Business and Finance/1bebd4bafc0c7d1c4ed49eb98561f3684b8c676663e174de50c42555d295049f_Business and Finance_brainstorming_brain_storming_storm.svg",
   "shortDescription": "Instant Games Bridge is a single free SDK for publishing HTML5 games on different platforms. ",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": [
     "- Saving and loading the player's progress",
     "- Advertising monetization: Banner, Interstitial, Rewarded",
@@ -287,6 +287,7 @@
             "",
             "var sound_manager = runtimeScene.getGame().getSoundManager();",
             "let volumen = sound_manager.getGlobalVolume();",
+            "let allow_visible = true;",
             "",
             "if (bridge && bridge.advertisement && bridge.game) {",
             "",
@@ -305,6 +306,7 @@
             "    })",
             "",
             "    bridge.game.on('visibility_state_changed', state => {",
+            "        if(allow_visible){",
             "            if(state === \"visible\"){",
             "                sound_manager.setGlobalVolume(volumen);",
             "                runtimeScene.getGame().pause(false);",
@@ -313,6 +315,7 @@
             "                sound_manager.setGlobalVolume(0);",
             "                runtimeScene.getGame().pause(true);  ",
             "            }",
+            "        }",
             "    })",
             "",
             "",
@@ -320,15 +323,19 @@
             "",
             "function sound_state(state){",
             "    if (state === \"opened\") {",
+            "    allow_visible = false;",
             "    getVolume();",
             "    sound_manager.setGlobalVolume(0);",
-            "    } else if (state === \"closed\") {",
+            "    } else {",
+            "        allow_visible = true;",
             "        sound_manager.setGlobalVolume(volumen);",
             "    }",
             "}",
             "",
             "function getVolume(){",
-            "    volumen = sound_manager.getGlobalVolume();",
+            "    if(sound_manager.getGlobalVolume() !== 0){",
+            "        volumen = sound_manager.getGlobalVolume();",
+            "    };",
             "}",
             "",
             ""
@@ -4070,6 +4077,107 @@
           "description": "Global variable array name",
           "name": "array_name",
           "type": "string"
+        }
+      ],
+      "objectGroups": []
+    },
+    {
+      "description": "Set background color.",
+      "fullName": "Set background color",
+      "functionType": "Action",
+      "group": "Background",
+      "name": "BackgroundColor",
+      "sentence": "Set background color _PARAM1_",
+      "events": [
+        {
+          "type": "BuiltinCommonInstructions::JsCode",
+          "inlineCode": [
+            "const rgbcolor = gdjs.rgbOrHexToRGBColor(eventsFunctionContext.getArgument(\"Color\"));",
+            "",
+            "document.body.style.backgroundColor = `rgb(${rgbcolor[0]},${rgbcolor[1]},${rgbcolor[2]})`;",
+            "",
+            "",
+            ""
+          ],
+          "parameterObjects": "",
+          "useStrict": true,
+          "eventsSheetExpanded": false
+        }
+      ],
+      "parameters": [
+        {
+          "description": "Color",
+          "name": "Color",
+          "type": "color"
+        }
+      ],
+      "objectGroups": []
+    },
+    {
+      "description": "Set background image.",
+      "fullName": "Set background image",
+      "functionType": "Action",
+      "group": "Background",
+      "name": "BackgroundImage",
+      "sentence": "Set background image _PARAM1_, Size _PARAM2_, Size value _PARAM3_%, Repeat _PARAM4_, Position _PARAM5_",
+      "events": [
+        {
+          "type": "BuiltinCommonInstructions::JsCode",
+          "inlineCode": [
+            "const img = eventsFunctionContext.getArgument(\"Image\");",
+            "const size = eventsFunctionContext.getArgument(\"Size\");",
+            "const size_number = eventsFunctionContext.getArgument(\"Size_number\") + \"%\";",
+            "const repeat = eventsFunctionContext.getArgument(\"Repeat\");",
+            "const position = eventsFunctionContext.getArgument(\"Position\");",
+            "",
+            "document.body.style.backgroundImage = \"url(\" + img + \")\"",
+            "document.body.style.backgroundRepeat  = repeat;",
+            "document.body.style.backgroundPosition = position;",
+            "",
+            "if(size !== \"number\"){",
+            "document.body.style.backgroundSize = size;",
+            "} else {",
+            "    document.body.style.backgroundSize = size_number;",
+            "}",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "parameterObjects": "",
+          "useStrict": true,
+          "eventsSheetExpanded": true
+        }
+      ],
+      "parameters": [
+        {
+          "description": "Image",
+          "name": "Image",
+          "type": "imageResource"
+        },
+        {
+          "description": "Background size",
+          "name": "Size",
+          "supplementaryInformation": "[\"auto\",\"cover\",\"number\"]",
+          "type": "stringWithSelector"
+        },
+        {
+          "description": "Size value(%)",
+          "longDescription": "To work, select \"number\" in the \"Background size\" column",
+          "name": "Size_number",
+          "type": "expression"
+        },
+        {
+          "description": "Background repeat",
+          "name": "Repeat",
+          "supplementaryInformation": "[\"repeat\",\"no-repeat\",\"repeat-x\",\"repeat-y\",\"round\"]",
+          "type": "stringWithSelector"
+        },
+        {
+          "description": "Background position",
+          "name": "Position",
+          "supplementaryInformation": "[\"center\",\"left\",\"right\",\"top\",\"bottom\"]",
+          "type": "stringWithSelector"
         }
       ],
       "objectGroups": []
