@@ -8,7 +8,7 @@
   "name": "InstantGamesBridge",
   "previewIconUrl": "https://asset-resources.gdevelop.io/public-resources/Icons/Glyphster Pack/Master/SVG/Business and Finance/1bebd4bafc0c7d1c4ed49eb98561f3684b8c676663e174de50c42555d295049f_Business and Finance_brainstorming_brain_storming_storm.svg",
   "shortDescription": "Instant Games Bridge is a single free SDK for publishing HTML5 games on different platforms. ",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": [
     "- Saving and loading the player's progress",
     "- Advertising monetization: Banner, Interstitial, Rewarded",
@@ -293,7 +293,7 @@
             "",
             "    bridge.advertisement.on('rewarded_state_changed', state => {",
             "        rewState.setString(state);",
-            "        sound_state(state);",
+            "        game_state(state);",
             "",
             "        if (state === \"rewarded\"){",
             "            rewRewarded.setBoolean(true)",
@@ -302,18 +302,15 @@
             "",
             "    bridge.advertisement.on('interstitial_state_changed', state => {",
             "            intState.setString(state); ",
-            "            sound_state(state);",
+            "            game_state(state);",
             "    })",
             "",
             "    bridge.game.on('visibility_state_changed', state => {",
             "        if(allow_visible){",
             "            if(state === \"visible\"){",
-            "                sound_manager.setGlobalVolume(volumen);",
-            "                runtimeScene.getGame().pause(false);",
+            "                play_sound()",
             "            } else{",
-            "                getVolume();",
-            "                sound_manager.setGlobalVolume(0);",
-            "                runtimeScene.getGame().pause(true);  ",
+            "                mute_sound()",
             "            }",
             "        }",
             "    })",
@@ -321,14 +318,13 @@
             "",
             "}",
             "",
-            "function sound_state(state){",
+            "function game_state(state){",
             "    if (state === \"opened\") {",
-            "    allow_visible = false;",
-            "    getVolume();",
-            "    sound_manager.setGlobalVolume(0);",
-            "    } else {",
+            "        allow_visible = false;",
+            "        mute_sound()",
+            "    } else if (state === \"closed\"){",
             "        allow_visible = true;",
-            "        sound_manager.setGlobalVolume(volumen);",
+            "        play_sound()",
             "    }",
             "}",
             "",
@@ -336,6 +332,17 @@
             "    if(sound_manager.getGlobalVolume() !== 0){",
             "        volumen = sound_manager.getGlobalVolume();",
             "    };",
+            "}",
+            "",
+            "function mute_sound(){",
+            "    getVolume();",
+            "    sound_manager.setGlobalVolume(0);",
+            "    runtimeScene.getGame().pause(true);  ",
+            "}",
+            "",
+            "function play_sound(){",
+            "    sound_manager.setGlobalVolume(volumen);",
+            "    runtimeScene.getGame().pause(false);",
             "}",
             "",
             ""
@@ -409,7 +416,7 @@
         {
           "description": "Platform",
           "name": "Platform",
-          "supplementaryInformation": "[\"yandex\",\"vk\",\"ok\",\"crazy_games\",\"absolute_games\",\"playgama\",\"wortal\",\"playdeck\",\"mock\"]",
+          "supplementaryInformation": "[\"yandex\",\"vk\",\"ok\",\"crazy_games\",\"absolute_games\",\"playgama\",\"wortal\",\"playdeck\",\"telegram\",\"mock\"]",
           "type": "stringWithSelector"
         }
       ],
@@ -1056,7 +1063,7 @@
       "description": "Authorize Player.",
       "fullName": "Authorize Player",
       "functionType": "Action",
-      "group": "Player",
+      "group": "Authorization",
       "name": "AuthorizePlayer",
       "sentence": "Authorize Player",
       "events": [
@@ -1821,6 +1828,106 @@
         }
       ],
       "parameters": [],
+      "objectGroups": []
+    },
+    {
+      "description": "Get leaderboard entries (id, name, photo, score, rank).",
+      "fullName": "Get leaderboard entries",
+      "functionType": "Action",
+      "group": "Bridge Yandex Games",
+      "name": "GetYandexLeadEntries",
+      "sentence": "Get Leaderboard _PARAM1_ Entries,  include user _PARAM2_, quantity around _PARAM3_,  quantity_top _PARAM4_ write to _PARAM5_",
+      "events": [
+        {
+          "type": "BuiltinCommonInstructions::Standard",
+          "conditions": [
+            {
+              "type": {
+                "value": "InstantGamesBridge::IsInizialize"
+              },
+              "parameters": [
+                "",
+                ""
+              ]
+            }
+          ],
+          "actions": [],
+          "events": [
+            {
+              "type": "BuiltinCommonInstructions::JsCode",
+              "inlineCode": [
+                "var catalog_array = runtimeScene.getGame().getVariables().get(eventsFunctionContext.getArgument(\"array_name\"));",
+                "",
+                "let options = { }",
+                "",
+                "switch (bridge.platform.id) {",
+                "    case 'yandex':",
+                "        options = {",
+                "            leaderboardName: eventsFunctionContext.getArgument(\"lead_name\"),",
+                "            includeUser: eventsFunctionContext.getArgument(\"include_user\"), ",
+                "            quantityAround: eventsFunctionContext.getArgument(\"quantity_around\"),",
+                "            quantityTop: eventsFunctionContext.getArgument(\"quantity_top\")",
+                "        }",
+                "        break",
+                "}",
+                "",
+                "if(catalog_array){",
+                "    bridge.leaderboard.getEntries(options)",
+                "        .then(entries => {",
+                "            entries.forEach(entry => {",
+                "                var newItem = new gdjs.Variable();",
+                "                newItem.getChild(\"id\").setString(entry.id);",
+                "                newItem.getChild(\"name\").setString(entry.name);",
+                "                newItem.getChild(\"photo\").setString(entry.photo);",
+                "                newItem.getChild(\"score\").setString(entry.score);",
+                "                newItem.getChild(\"rank\").setString(entry.rank);",
+                "                ",
+                "                var index = catalog_array.getChildrenCount();",
+                "                catalog_array.addChild(index.toString(), newItem);",
+                "",
+                "            })",
+                "        })",
+                "        .catch(error => {",
+                "            console.log(error);",
+                "        })",
+                "}  else {",
+                "    console.log(\"Global Variable \" + eventsFunctionContext.getArgument(\"array_name\") + \" is not exist\");",
+                "}"
+              ],
+              "parameterObjects": "",
+              "useStrict": true,
+              "eventsSheetExpanded": true
+            }
+          ]
+        }
+      ],
+      "parameters": [
+        {
+          "description": "Leaderboard name",
+          "name": "lead_name",
+          "type": "string"
+        },
+        {
+          "description": "Include User",
+          "name": "include_user",
+          "type": "trueorfalse"
+        },
+        {
+          "description": "Quantity Around",
+          "name": "quantity_around",
+          "type": "expression"
+        },
+        {
+          "description": "Quantity Top",
+          "name": "quantity_top",
+          "type": "expression"
+        },
+        {
+          "description": "Global variable array name",
+          "name": "array_name",
+          "type": "string"
+        }
+      ],
       "objectGroups": []
     },
     {
@@ -3212,31 +3319,37 @@
             {
               "type": "BuiltinCommonInstructions::JsCode",
               "inlineCode": [
+                "const setLog = eventsFunctionContext.getArgument('setLog');",
                 "var state = runtimeScene.getGame().getVariablesForExtension(\"InstantGamesBridge\").get(\"IGB_StorageSetSuccess\");",
                 "var gdKeyArray = runtimeScene.getGame().getVariablesForExtension(\"InstantGamesBridge\").get(\"IGB_Set_keyArray\");",
                 "var gdValArray = runtimeScene.getGame().getVariablesForExtension(\"InstantGamesBridge\").get(\"IGB_Set_valArray\");",
                 "let keyArray = [];",
                 "let valArray = [];",
+                "let options;",
                 "",
-                "restoreArray (gdKeyArray, keyArray);",
-                "restoreArray (gdValArray, valArray);",
+                "restoreArray(gdKeyArray, keyArray);",
+                "restoreArray(gdValArray, valArray);",
                 "",
-                "var typeArgument = eventsFunctionContext.getArgument('type');",
-                "let type;",
+                "const platform = bridge.platform.id;",
                 "",
-                "if (typeArgument === \"Local\") {",
-                "    type = bridge.STORAGE_TYPE.LOCAL_STORAGE;",
-                "} else if (typeArgument === \"Platform\") {",
-                "    type = bridge.STORAGE_TYPE.PLATFORM_INTERNAL;",
+                "const typeArgument = eventsFunctionContext.getArgument('type');",
+                "const local_type = bridge.STORAGE_TYPE.LOCAL_STORAGE;",
+                "const platform_type = bridge.STORAGE_TYPE.PLATFORM_INTERNAL;",
+                "const default_type = bridge.storage.defaultType;",
+                "",
+                "",
+                "if (typeArgument === \"Platform\") {",
+                "    if (bridge.storage.isSupported(platform_type)) {",
+                "        options = { [platform]: platform_type };",
+                "    } else {",
+                "        console.log(\"Platform internal is not supported for the \" + platform + \" platform\");",
+                "        return",
+                "    }",
+                "} else if (typeArgument === \"Local\") {",
+                "    options = { [platform]: local_type };",
                 "} else {",
-                "    type = bridge.storage.defaultType;",
+                "    options = { [platform]: default_type };",
                 "}",
-                "",
-                "let options = {",
-                "    'vk': type,",
-                "    'yandex': type",
-                "}",
-                "var setLog = eventsFunctionContext.getArgument('setLog');",
                 "",
                 "bridge.storage.set(keyArray, valArray, options)",
                 "    .then(() => {",
@@ -3249,9 +3362,8 @@
                 "        }",
                 "    })",
                 "    .catch(error => {",
-                "        console.error(\"Set storage failed\", error);",
+                "        console.error(\"Set storage failed \", error);",
                 "    });",
-                "",
                 "",
                 "function restoreArray (gd, array){",
                 "    let allVars = gd.getAllChildren();",
@@ -3261,7 +3373,8 @@
                 "            array[key] = allVars[item].getAsString(); ",
                 "        }",
                 "    }",
-                "}"
+                "}",
+                ""
               ],
               "parameterObjects": "",
               "useStrict": true,
@@ -3425,31 +3538,35 @@
             {
               "type": "BuiltinCommonInstructions::JsCode",
               "inlineCode": [
+                "const setLog = eventsFunctionContext.getArgument('setLog');",
                 "var gdKeyArray = runtimeScene.getGame().getVariablesForExtension(\"InstantGamesBridge\").get(\"IGB_Get_keyArray\");",
                 "var gdVarArray = runtimeScene.getGame().getVariablesForExtension(\"InstantGamesBridge\").get(\"IGB_Get_varArray\");",
                 "let keyArray = [];",
                 "let varArray = [];",
+                "let options;",
                 "",
                 "restoreArray (gdKeyArray, keyArray);",
                 "restoreArray (gdVarArray, varArray);",
                 "",
-                "var typeArgument = eventsFunctionContext.getArgument('type');",
-                "let type;",
+                "const platform = bridge.platform.id;",
                 "",
-                "if (typeArgument === \"Local\") {",
-                "    type = bridge.STORAGE_TYPE.LOCAL_STORAGE;",
-                "} else if (typeArgument === \"Platform\") {",
-                "    type = bridge.STORAGE_TYPE.PLATFORM_INTERNAL;",
+                "const typeArgument = eventsFunctionContext.getArgument('type');",
+                "const local_type = bridge.STORAGE_TYPE.LOCAL_STORAGE;",
+                "const platform_type = bridge.STORAGE_TYPE.PLATFORM_INTERNAL;",
+                "const default_type = bridge.storage.defaultType;",
+                "",
+                "if (typeArgument === \"Platform\") {",
+                "    if (bridge.storage.isSupported(platform_type)) {",
+                "        options = { [platform]: platform_type };",
+                "    } else {",
+                "        console.log(\"Platform internal is not supported for the \" + platform + \" platform\");",
+                "        return",
+                "    }",
+                "} else if (typeArgument === \"Local\") {",
+                "    options = { [platform]: local_type };",
                 "} else {",
-                "    type = bridge.storage.defaultType;",
+                "    options = { [platform]: default_type };",
                 "}",
-                "",
-                "let options = {",
-                "    'vk': type,",
-                "    'yandex': type",
-                "}",
-                "",
-                "var setLog = eventsFunctionContext.getArgument('setLog');",
                 "",
                 "bridge.storage.get(keyArray, options)",
                 "    .then(data => {",
@@ -3583,29 +3700,33 @@
             {
               "type": "BuiltinCommonInstructions::JsCode",
               "inlineCode": [
+                "var setLog = eventsFunctionContext.getArgument('setLog');",
                 "var state = runtimeScene.getGame().getVariablesForExtension(\"InstantGamesBridge\").get(\"IGB_StorageDelSuccess\");",
                 "let gdArray = runtimeScene.getGame().getVariablesForExtension(\"InstantGamesBridge\").get(\"IGB_Del_keyArray\");",
                 "let keyArray = [];",
+                "let options;",
                 "",
                 "restoreArray (gdArray, keyArray);",
                 "",
-                "var typeArgument = eventsFunctionContext.getArgument('type');",
-                "let type;",
+                "const platform = bridge.platform.id;",
                 "",
-                "if (typeArgument === \"Local\") {",
-                "    type = bridge.STORAGE_TYPE.LOCAL_STORAGE;",
-                "} else if (typeArgument === \"Platform\") {",
-                "    type = bridge.STORAGE_TYPE.PLATFORM_INTERNAL;",
+                "const typeArgument = eventsFunctionContext.getArgument('type');",
+                "const local_type = bridge.STORAGE_TYPE.LOCAL_STORAGE;",
+                "const platform_type = bridge.STORAGE_TYPE.PLATFORM_INTERNAL;",
+                "const default_type = bridge.storage.defaultType;",
+                "",
+                "if (typeArgument === \"Platform\") {",
+                "    if (bridge.storage.isSupported(platform_type)) {",
+                "        options = { [platform]: platform_type };",
+                "    } else {",
+                "        console.log(\"Platform internal is not supported for the \" + platform + \" platform\");",
+                "        return",
+                "    }",
+                "} else if (typeArgument === \"Local\") {",
+                "    options = { [platform]: local_type };",
                 "} else {",
-                "    type = bridge.storage.defaultType;",
+                "    options = { [platform]: default_type };",
                 "}",
-                "",
-                "let options = {",
-                "    'vk': type,",
-                "    'yandex': type",
-                "}",
-                "",
-                "var setLog = eventsFunctionContext.getArgument('setLog');",
                 "",
                 "bridge.storage.delete(keyArray, options)",
                 "    .then(() => {",
@@ -3708,6 +3829,66 @@
         }
       ],
       "parameters": [],
+      "objectGroups": []
+    },
+    {
+      "description": "Append Remote Config Get Request.",
+      "fullName": "Append Remote Config Get Request",
+      "functionType": "Action",
+      "group": "Config Request",
+      "name": "GetRemoteConfig",
+      "private": true,
+      "sentence": "Append Remote Config Get Request. Key: _PARAM1_ write to _PARAM2_ ",
+      "events": [
+        {
+          "type": "BuiltinCommonInstructions::Standard",
+          "conditions": [
+            {
+              "type": {
+                "value": "BooleanVariable"
+              },
+              "parameters": [
+                "IGB_initialize",
+                "True",
+                ""
+              ]
+            }
+          ],
+          "actions": [],
+          "events": [
+            {
+              "type": "BuiltinCommonInstructions::JsCode",
+              "inlineCode": [
+                "var catalog_array = runtimeScene.getGame().getVariables().get(eventsFunctionContext.getArgument(\"array_name\"));",
+                "",
+                "bridge.remoteConfig.get(options)",
+                "    .then(data => {",
+                "        for (let i = 0; i < data.length; i++) {",
+                "            let value = data[i]",
+                "",
+                "            var index = catalog_array.getChildrenCount();",
+                "            catalog_array.addChild(index.toString(), value);",
+                "",
+                "        }",
+                "    })",
+                "    .catch(error => {",
+                "        // ошибка, что-то пошло не так",
+                "    })"
+              ],
+              "parameterObjects": "",
+              "useStrict": true,
+              "eventsSheetExpanded": true
+            }
+          ]
+        }
+      ],
+      "parameters": [
+        {
+          "description": "Global variable array name",
+          "name": "array_name",
+          "type": "string"
+        }
+      ],
       "objectGroups": []
     },
     {
@@ -3836,7 +4017,6 @@
       "sentence": "Consume Purchase of _PARAM1_",
       "events": [
         {
-          "folded": true,
           "type": "BuiltinCommonInstructions::Standard",
           "conditions": [
             {
@@ -3947,7 +4127,7 @@
       "objectGroups": []
     },
     {
-      "description": "Get Catalog (id, title, description, imageURI, price, priceValue, priceCurrencyCode).",
+      "description": "Get Catalog (id, title, description, imageURI, price, priceValue, priceCurrencyCode, priceCurrencyImage).",
       "fullName": "Get Catalog",
       "functionType": "Action",
       "group": "Payments",
@@ -3986,6 +4166,7 @@
                 "            newItem.getChild(\"price\").setString(catalogItem.price);",
                 "            newItem.getChild(\"priceValue\").setNumber(catalogItem.priceValue);",
                 "            newItem.getChild(\"priceCurrencyCode\").setString(catalogItem.priceCurrencyCode);",
+                "            newItem.getChild(\"priceCurrencyImage\").setString(catalogItem.priceCurrencyImage);",
                 "            ",
                 "            var index = catalog_array.getChildrenCount();",
                 "            catalog_array.addChild(index.toString(), newItem);",
